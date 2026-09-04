@@ -10,52 +10,49 @@ enum class FlowGroup(val title: String) {
     VARIABLE("Переменные расходы")
 }
 
-data class Category(val id: String, val name: String, val group: FlowGroup)
+/** Определение категории для засеивания БД при первом запуске. */
+data class CategoryDef(val id: String, val name: String, val group: FlowGroup)
 
-object Categories {
+object CategorySeed {
 
-    val all: List<Category> = listOf(
+    val defaults: List<CategoryDef> = listOf(
         // Активный доход
-        Category("advance", "Аванс", FlowGroup.ACTIVE),
-        Category("salary", "Зарплата", FlowGroup.ACTIVE),
-        Category("transfers_in", "Переводы входящие", FlowGroup.ACTIVE),
-        Category("sales", "Продажи (Авито)", FlowGroup.ACTIVE),
+        CategoryDef("advance", "Аванс", FlowGroup.ACTIVE),
+        CategoryDef("salary", "Зарплата", FlowGroup.ACTIVE),
+        CategoryDef("transfers_in", "Переводы входящие", FlowGroup.ACTIVE),
+        CategoryDef("sales", "Продажи (Авито)", FlowGroup.ACTIVE),
         // Пассивный доход
-        Category("deposit_int", "Проценты по вкладу", FlowGroup.PASSIVE),
-        Category("coupons", "Купоны по облигациям", FlowGroup.PASSIVE),
-        Category("capitalization", "Капитализация НС", FlowGroup.PASSIVE),
-        Category("cashback", "Кэшбек", FlowGroup.PASSIVE),
-        Category("last_year", "С прошлого года", FlowGroup.PASSIVE),
-        Category("other_income", "Другой доход", FlowGroup.PASSIVE),
+        CategoryDef("deposit_int", "Проценты по вкладу", FlowGroup.PASSIVE),
+        CategoryDef("coupons", "Купоны по облигациям", FlowGroup.PASSIVE),
+        CategoryDef("capitalization", "Капитализация НС", FlowGroup.PASSIVE),
+        CategoryDef("cashback", "Кэшбек", FlowGroup.PASSIVE),
+        CategoryDef("last_year", "С прошлого года", FlowGroup.PASSIVE),
+        CategoryDef("other_income", "Другой доход", FlowGroup.PASSIVE),
         // Постоянные расходы
-        Category("rent", "Аренда / ипотека", FlowGroup.FIXED),
-        Category("groceries", "Продукты", FlowGroup.FIXED),
-        Category("transport", "Транспорт", FlowGroup.FIXED),
-        Category("telecom", "Связь", FlowGroup.FIXED),
-        Category("credit", "Кредит", FlowGroup.FIXED),
-        Category("subscriptions", "Подписки", FlowGroup.FIXED),
-        Category("taxes", "Налоги", FlowGroup.FIXED),
+        CategoryDef("rent", "Аренда / ипотека", FlowGroup.FIXED),
+        CategoryDef("groceries", "Продукты", FlowGroup.FIXED),
+        CategoryDef("transport", "Транспорт", FlowGroup.FIXED),
+        CategoryDef("telecom", "Связь", FlowGroup.FIXED),
+        CategoryDef("credit", "Кредит", FlowGroup.FIXED),
+        CategoryDef("subscriptions", "Подписки", FlowGroup.FIXED),
+        CategoryDef("taxes", "Налоги", FlowGroup.FIXED),
         // Переменные расходы
-        Category("eating_out", "Еда вне дома", FlowGroup.VARIABLE),
-        Category("coffee", "Кофе", FlowGroup.VARIABLE),
-        Category("entertainment", "Развлечения, отдых", FlowGroup.VARIABLE),
-        Category("hobby", "Хобби", FlowGroup.VARIABLE),
-        Category("clothes", "Одежда, обувь", FlowGroup.VARIABLE),
-        Category("household", "Бытовые товары", FlowGroup.VARIABLE),
-        Category("health", "Здоровье", FlowGroup.VARIABLE),
-        Category("pets", "Домашние животные", FlowGroup.VARIABLE),
-        Category("gifts", "Подарки", FlowGroup.VARIABLE),
-        Category("education", "Обучение", FlowGroup.VARIABLE),
-        Category("misc", "Прочее / непредвиденное", FlowGroup.VARIABLE),
-        Category("transfers_out", "Переводы исходящие", FlowGroup.VARIABLE),
-        Category("withdrawal", "Снятие наличных", FlowGroup.VARIABLE)
+        CategoryDef("eating_out", "Еда вне дома", FlowGroup.VARIABLE),
+        CategoryDef("coffee", "Кофе", FlowGroup.VARIABLE),
+        CategoryDef("entertainment", "Развлечения, отдых", FlowGroup.VARIABLE),
+        CategoryDef("hobby", "Хобби", FlowGroup.VARIABLE),
+        CategoryDef("clothes", "Одежда, обувь", FlowGroup.VARIABLE),
+        CategoryDef("household", "Бытовые товары", FlowGroup.VARIABLE),
+        CategoryDef("health", "Здоровье", FlowGroup.VARIABLE),
+        CategoryDef("pets", "Домашние животные", FlowGroup.VARIABLE),
+        CategoryDef("gifts", "Подарки", FlowGroup.VARIABLE),
+        CategoryDef("education", "Обучение", FlowGroup.VARIABLE),
+        CategoryDef("misc", "Прочее / непредвиденное", FlowGroup.VARIABLE),
+        CategoryDef("transfers_out", "Переводы исходящие", FlowGroup.VARIABLE),
+        CategoryDef("withdrawal", "Снятие наличных", FlowGroup.VARIABLE)
     )
 
-    val byId: Map<String, Category> = all.associateBy { it.id }
-    val expenses: List<Category> = all.filter { it.group == FlowGroup.FIXED || it.group == FlowGroup.VARIABLE }
-    val incomes: List<Category> = all.filter { it.group == FlowGroup.ACTIVE || it.group == FlowGroup.PASSIVE }
-
-    /** Планы по умолчанию (из исходной таблицы пользователя), засеиваются при первом запуске */
+    /** Планы по умолчанию (из исходной таблицы пользователя). */
     val defaultPlan: Map<String, Double> = mapOf(
         "rent" to 4000.0,
         "groceries" to 10000.0,

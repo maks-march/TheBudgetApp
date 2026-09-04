@@ -12,6 +12,14 @@
 - **Добавление операции** (кнопка «+»): сумма → тип (расход/доход) → категория → дата → заметка.
   Тап по операции в списке — редактирование/удаление.
 - **Навигация по месяцам** со стрелок у заголовка.
+- **Экспорт в Excel**: кнопка со стрелкой вниз в шапке — все операции выгружаются
+  в .xlsx в папку «Загрузки» (Дата / Тип / Категория / Сумма / Заметка).
+  Без Apache POI — собственный минимальный OOXML-генератор `export/XlsxWriter.kt`
+  (перенесён из TheSleepTracker). На Android 10+ запись через MediaStore без разрешений.
+- **Самообновление через GitHub**: при запуске и по кнопке в шапке приложение проверяет
+  `version.json` в репозитории, скачивает APK системным DownloadManager и открывает
+  установщик (с обработкой разрешения «неизвестные источники» на Android 8+).
+  Механизм перенесён из TheSleepTracker (модули `update/UpdateChecker.kt`, `update/ApkDownloader.kt`).
 
 ### Ключевая логика (конверты с переносом)
 
@@ -49,6 +57,30 @@ CLI: `./gradlew assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`.
 | Архитектура | MVVM: `AppViewModel` + `StateFlow<AppState>` |
 | БД | Room (таблицы `transactions`, `plans`), KSP |
 | Расчёты | `BudgetEngine` — чистый Kotlin без Android-зависимостей (тестируется юнит-тестами) |
+| Экспорт | `XlsxWriter` — .xlsx без внешних зависимостей; запись в Downloads через MediaStore |
+| Обновления | `version.json` в репозитории + DownloadManager + FileProvider |
+
+## Как выпустить обновление (чек-лист)
+
+Приложение обновляет само себя с GitHub. Ссылки заданы в `app/build.gradle.kts`
+(`VERSION_URL`, `APK_URL`) — сейчас указывают на `maks-march/BudgetApp`, поправьте под свой репозиторий.
+
+1. Поднять `versionCode` (на 1) и `versionName` в `app/build.gradle.kts`.
+2. Собрать: `./gradlew assembleRelease` → `app/build/outputs/apk/release/app-release.apk`.
+3. Положить APK в репозиторий как `apk/Budget.apk` (заменить файл).
+4. Обновить `version.json` в корне репозитория:
+   `{ "versionCode": <тот же, что в gradle>, "versionName": "...", "notes": "что нового" }`.
+5. Закоммитить и запушить — у всех установленных приложений при следующем запуске
+   появится диалог «Доступна версия …».
+
+Почему это работает (уроки TheSleepTracker из `ОБНОВЛЕНИЕ.md`):
+- **подпись**: debug и release подписаны одним постоянным ключом `keystore/budget.jks`
+  (пароль по умолчанию `budgetapp`, выносится в `keystore.properties`) — иначе обновление
+  не встанет поверх (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`);
+- **`versionCode` в `version.json` должен быть строго больше** установленного,
+  сравнение `4 > 4` = «обновлений нет»;
+- на Android 8+ один раз нужно разрешить «Установка неизвестных приложений» —
+  приложение само открывает нужный экран настроек.
 
 ## Структура
 
@@ -60,11 +92,17 @@ app/src/main/java/ru/budget/app/
 │   └── Db.kt                  — Room: сущности, DAO, база
 ├── domain/
 │   └── BudgetEngine.kt        — конверты, переносы, дельта, итоги месяца
+├── export/
+│   ├── XlsxWriter.kt          — минимальный генератор .xlsx без зависимостей
+│   └── BudgetExporter.kt      — выгрузка операций в «Загрузки» (MediaStore)
+├── update/
+│   ├── UpdateChecker.kt       — проверка version.json в репозитории
+│   └── ApkDownloader.kt       — DownloadManager + установщик + разрешения
 └── ui/
     ├── Theme.kt               — цвета и тема
     ├── Common.kt              — формат денег, даты, GroupDot
-    ├── AppViewModel.kt        — состояние + действия
-    ├── AppRoot.kt             — scaffold, навигация, переключатель месяцев
+    ├── AppViewModel.kt        — состояние + действия (+ экспорт)
+    ├── AppRoot.kt             — scaffold, шапка (экспорт/обновления), диалоги
     ├── TodayScreen.kt         — дашборд
     ├── BudgetScreen.kt        — план-факт + диалог плана
     └── AddSheet.kt            — шторка добавления/редактирования
@@ -76,6 +114,6 @@ app/src/main/java/ru/budget/app/
 2. Калькулятор распределения дохода (50/30/20 и свои проценты).
 3. Кастомные категории (сейчас — фиксированный справочник).
 4. Копирование плана месяца на весь год.
-5. Виджет быстрого ввода, напоминания о лимитах.
-6. Экспорт/импорт (CSV/JSON), синхронизация с Google Sheets.
+5. Второй лист в экспорте: сводка конвертов по месяцам (как лист 1 таблицы).
+6. Импорт из CSV/JSON, синхронизация с Google Sheets.
 7. Юнит-тесты `BudgetEngine` (формулы переносов — ключевой сценарий).

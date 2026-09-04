@@ -1,0 +1,38 @@
+# ───────── Gradle ─────────
+.gradle/
+build/
+app/build/
+
+# ─── Android Studio / IntelliJ ───
+.idea/
+*.iml
+.navigation/
+captures/
+
+# машино-зависимый конфиг (пути к SDK) — нельзя коммитить
+local.properties
+
+# ─── NDK / native (на будущее) ───
+.cxx/
+.externalNativeBuild/
+
+# ───────── Подписи ─────────
+# Пароли хранилища — вне git.
+# Сам ключ keystore/budget.jks держим в репозитории НАМЕРЕННО:
+# постоянная подпись = самообновления встают поверх старой версии (см. README).
+keystore.properties
+*.jks
+!keystore/budget.jks
+*.keystore
+
+# ───────── APK ─────────
+# Локальные сборки не коммитим, НО релизный apk/Budget.apk хранится
+# в репозитории специально — приложение качает его для самообновления.
+*.apk
+!apk/Budget.apk
+
+# ───────── ОС и служебное ─────────
+.DS_Store
+Thumbs.db
+*.log
+~$*

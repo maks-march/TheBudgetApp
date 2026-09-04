@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>С1. Траты — главный экран (ревизия 4)</title>
+<style>
+:root{
+--bg:#0b0d12; --surface:#161a22; --surface2:#20242f; --line:#232836;
+--txt:#e9ecf3; --mut:#98a1b3; --dim:#666f81;
+--green:#4ade80; --green-dark:#06240f; --green-soft:#8fd6ab;
+--orange:#ffb376; --yellow:#ffe082; --red:#ff8a8a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+background:#07080c;
+min-height:100vh;
+font-family:system-ui,'Segoe UI',Roboto,sans-serif;
+color:var(--txt);
+display:flex;flex-direction:column;align-items:center;
+padding:34px 16px 60px;
+}
+header{max-width:820px;text-align:center;margin-bottom:6px}
+header h1{font-size:21px;font-weight:800}
+header h1 b{color:var(--green)}
+.meta{font-size:10.5px;color:var(--dim);font-weight:800;letter-spacing:.8px;margin-top:5px}
+.rev{max-width:820px;margin:12px auto 26px;border:1px solid var(--line);border-radius:16px;
+overflow:hidden}
+.rev .h{background:var(--surface);padding:10px 16px;font-size:11px;font-weight:800;
+letter-spacing:.6px;color:var(--mut)}
+.rev .b{padding:12px 16px;font-size:12px;color:var(--mut);line-height:1.7;background:#10131a}
+.rev .b b{color:var(--txt)}
+.row-wrap{display:flex;flex-wrap:wrap;gap:36px;justify-content:center}
+.state{display:flex;flex-direction:column;align-items:center;gap:12px}
+.state .lbl{font-size:12px;font-weight:800;color:var(--mut)}
+.phone{width:356px;height:742px;background:#000;border-radius:40px;padding:10px;flex:none;
+box-shadow:0 28px 70px rgba(0,0,0,.65),0 0 0 1px #262c3a}
+.scr{width:100%;height:100%;border-radius:31px;overflow:hidden;position:relative;
+background:linear-gradient(180deg,#12151d,#0c0f15);display:flex;flex-direction:column}
+.status{height:30px;display:flex;align-items:center;justify-content:space-between;
+padding:0 22px;font-size:11px;font-weight:600;flex:none;color:#c8cdd8}
+.appbar{display:flex;align-items:center;padding:2px 16px 8px;flex:none}
+.appbar .t{font-size:18px;font-weight:800;flex:1;letter-spacing:.2px}
+.gear{width:32px;height:32px;border-radius:11px;background:var(--surface2);
+display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:14px}
+.month{display:flex;align-items:center;padding:0 10px 12px;flex:none}
+.month .arr{width:36px;height:36px;border-radius:12px;background:var(--surface);
+border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--mut)}
+.month .mid{flex:1;text-align:center}
+.month .mid b{font-size:14px;font-weight:800;letter-spacing:.3px}
+.month .mid span{display:block;font-size:9.5px;color:var(--dim);font-weight:700;margin-top:2px}
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0 16px}
+/* ── пончик ── */
+.donutcard{background:var(--surface);border:1px solid var(--line);border-radius:22px;
+padding:12px 14px;margin-bottom:10px}
+.donutwrap{display:flex;justify-content:center;padding:2px 0 12px}
+.donut{width:196px;height:196px;border-radius:50%;flex:none;position:relative;
+background:conic-gradient(#ff8f4d 0% 37%, #ffb376 37% 66%, #ffe082 66% 77%,
+#a7f3d0 77% 86%, #fcd34d 86% 92%, #d8b4fe 92% 97%, #94a3b8 97% 100%)}
+.donut .hole{position:absolute;inset:38px;border-radius:50%;background:var(--surface);
+display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hole b{font-size:19px;font-weight:800;letter-spacing:.2px}
+.hole span{font-size:8.5px;color:var(--dim);font-weight:800;letter-spacing:.6px;margin-top:2px}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:7px 16px}
+.lrow{display:flex;align-items:center;gap:7px;font-size:10.5px}
+.ldot{width:8px;height:8px;border-radius:3px;flex:none}
+.lrow .nm{flex:1;color:var(--mut);font-weight:600;white-space:nowrap;overflow:hidden}
+.lrow b{font-weight:750;font-variant-numeric:tabular-nums}
+/* интерактивная диаграмма */
+.donutwrap{position:relative}
+.donut.tap{cursor:pointer}
+.hit{position:absolute;width:98px;height:49px;transform-origin:98px 49px;cursor:pointer}
+.hit:hover{background:rgba(255,255,255,.05);border-radius:8px}
+.dimmed{opacity:.35}
+.hole .pct{font-size:13px;font-weight:800;color:var(--green-soft);margin-bottom:1px}
+/* стрелка траты */
+.arrow{width:22px;height:22px;border-radius:8px;background:var(--surface2);
+display:flex;align-items:center;justify-content:center;flex:none}
+.arrow svg{width:11px;height:11px}
+.lrest{font-size:10px;color:var(--dim);font-weight:650;text-align:right;padding-top:1px}
+/* ── быстрые траты ── */
+.qrow{padding:2px 0 10px}
+.qcap{font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--dim);margin:0 2px 7px}
+.qcap small{color:#4b5567;font-weight:650;letter-spacing:.3px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:9px 12px;border-radius:13px;background:var(--surface);border:1px solid var(--line);
+font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px}
+.chip small{color:var(--dim);font-weight:650}
+.chip.add{border-style:dashed;color:var(--dim);gap:5px}
+/* ── лента ── */
+.feed{flex:1;overflow:hidden;border-top:1px solid var(--line);padding-top:2px}
+.dhead{display:flex;justify-content:space-between;align-items:baseline;padding:9px 2px 5px}
+.dhead span{font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--dim)}
+.dhead b{font-size:11px;color:var(--mut);font-weight:700}
+.op{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid #161a24}
+.op:last-child{border:none}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.op .nm{font-size:13px;font-weight:600;flex:1}
+.op .nm small{display:block;font-size:10px;color:var(--dim);font-weight:500;margin-top:1px}
+.op .sum{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--red)}
+.alllink{text-align:center;font-size:11px;color:var(--dim);font-weight:700;padding:11px 0 8px}
+/* ── пустое состояние пончика ── */
+.donut.empty{background:none;border:2px dashed #2c3345}
+/* ── навигация ── */
+.nav{height:58px;background:#0c0f15f5;border-top:1px solid var(--line);display:flex;
+align-items:center;padding:0 10px;flex:none}
+.nb{flex:1;text-align:center;font-size:10px;font-weight:700;color:var(--dim)}
+.nb .i{font-size:15px;color:var(--dim);margin-bottom:3px}
+.nb.on{color:var(--green)} .nb.on .i{color:var(--green)}
+.fab{position:absolute;right:14px;bottom:72px;width:44px;height:44px;border-radius:15px;
+background:var(--green);color:var(--green-dark);display:flex;align-items:center;
+justify-content:center;font-size:22px;font-weight:800;flex:none;
+box-shadow:0 8px 20px rgba(74,222,128,.45);border:3px solid #0c0f15}
+/* аннотации */
+.n{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+border-radius:50%;background:var(--green);color:var(--green-dark);font-size:10px;font-weight:800;
+font-style:normal;margin-left:6px;vertical-align:2px;flex:none}
+.notes{max-width:820px;margin-top:28px;display:flex;flex-direction:column;gap:6px}
+.notes div{font-size:11.5px;color:var(--mut);line-height:1.6;background:#10131a;
+border:1px solid var(--line);border-radius:12px;padding:9px 13px}
+.notes b{color:var(--txt)}
+.spec{max-width:820px;margin-top:14px;font-size:11px;color:var(--dim);line-height:1.6;
+background:#10131a99;border:1px dashed var(--line);border-radius:12px;padding:10px 14px}
+.spec b{color:var(--mut)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>С1. Траты — <b>главный экран, ревизия 4</b></h1>
+  <div class="meta">ИТЕРАЦИЯ 1 · ЭКРАН 1 · РЕВИЗИЯ 4 (интерактивная диаграмма)</div>
+</header>
+
+<div class="rev">
+  <div class="h">ИСТОРИЯ ПРАВОК · РЕВИЗИЯ 4</div>
+  <div class="b">
+    <b>1)</b> Блок «можно тратить» заменён <b>круговой диаграммой расходов по категориям</b> —
+    в центре итог за месяц, в легенде — категории с суммами и долями.<br>
+    <b>2)</b> <b>Дельта убрана</b> с экрана (и из спеки — G2 отложена до починки логики).<br>
+    <b>3)</b> «Повторить трату» → <b>«Быстрая трата»</b>: свои шаблоны, «+» добавляет новую
+    через обычную шторку добавления, тап — записать, долгое нажатие — удалить.<br>
+    <b>4)</b> Нижняя навигация: <b>Траты · Доходы · План-факт</b>, кнопка «+» — над панелью справа.<br>
+    <b>Ревизия 3:</b> FAB «+» меньше (44dp); чип добавления быстрой траты — только «＋» без текста;
+    подсказки-инструкции убраны; диаграмма крупнее (196dp по центру), легенда — под ней в 2 колонки.<br>
+    <b>Ревизия 4:</b> проценты убраны из легенды; тап по сегменту диаграммы показывает в центре
+    категорию/процент/сумму (повторный тап — назад к итогам); иконка траты в ленте — стрелка вниз.
+  </div>
+</div>
+
+<div class="row-wrap">
+
+  <!-- ═════════ СОСТОЯНИЕ: ОБЫЧНЫЙ ДЕНЬ ═════════ -->
+  <div class="state">
+    <div class="lbl">Состояние 1 — обычный день</div>
+    <div class="phone"><div class="scr">
+      <div class="status"><span>9:41</span><span>▲ ● ■</span></div>
+
+      <div class="appbar">
+        <div class="t">Траты</div>
+        <div class="gear">≡<i class="n" style="position:absolute;margin:-26px 0 0 2px"></i></div>
+      </div>
+
+      <div class="month">
+        <div class="arr">‹</div>
+        <div class="mid"><b>Сентябрь 2026</b><span>12 дней до конца месяца<i class="n" style="position:absolute;margin:12px 0 0 4px"></i></span></div>
+        <div class="arr">›</div>
+      </div>
+
+      <div class="content">
+
+        <div class="donutcard">
+          <div class="donutwrap" id="dw">
+            <div class="donut tap" id="donut"><div class="hole" id="hole"><b>10 760 ₽</b><span>ЗА МЕСЯЦ</span><i class="n" style="position:absolute;margin:70px 0 0 -14px"></i></div></div>
+          </div>
+          <div class="legend" id="lg">
+            <div class="lrow"><span class="ldot" style="background:#ff8f4d"></span>
+              <span class="nm">Аренда/ипотека</span><b>4 000</b></div>
+            <div class="lrow"><span class="ldot" style="background:#ffb376"></span>
+              <span class="nm">Продукты</span><b>3 120</b></div>
+            <div class="lrow"><span class="ldot" style="background:#ffe082"></span>
+              <span class="nm">Кофе</span><b>1 200</b></div>
+            <div class="lrow"><span class="ldot" style="background:#a7f3d0"></span>
+              <span class="nm">Здоровье</span><b>1 000</b></div>
+            <div class="lrow"><span class="ldot" style="background:#fcd34d"></span>
+              <span class="nm">Еда вне дома</span><b>640</b></div>
+            <div class="lrow"><span class="ldot" style="background:#d8b4fe"></span>
+              <span class="nm">Транспорт</span><b>530</b></div>
+            <div class="lrow"><span class="ldot" style="background:#94a3b8"></span>
+              <span class="nm">Прочее</span><b>270</b></div>
+          </div>
+        </div>
+
+        <div class="qrow">
+          <div class="qcap">БЫСТРАЯ ТРАТА<i class="n" style="position:absolute;margin:-13px 0 0 4px"></i></div>
+          <div class="chips">
+            <span class="chip">Кофе <small>190</small></span>
+            <span class="chip">Продукты <small>890</small></span>
+            <span class="chip">Транспорт <small>60</small></span>
+            <span class="chip add">＋</span>
+          </div>
+        </div>
+
+        <div class="feed">
+          <div class="dhead"><span>СЕГОДНЯ · 13 СЕН</span><b>1 080 ₽</b><i class="n" style="position:absolute;margin:-12px 0 0 -6px"></i></div>
+          <div class="op"><div class="arrow"><svg viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M6 10.5L2.5 7M6 10.5L9.5 7" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="nm">Продукты<small>Пятёрочка</small></div>
+            <div class="sum">−890 ₽</div></div>
+          <div class="op"><div class="arrow"><svg viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M6 10.5L2.5 7M6 10.5L9.5 7" stroke="var(--yellow)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="nm">Кофе<small>латте</small></div>
+            <div class="sum">−190 ₽</div></div>
+          <div class="dhead"><span>ВЧЕРА · 12 СЕН</span><b>1 760 ₽</b></div>
+          <div class="op"><div class="arrow"><svg viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M6 10.5L2.5 7M6 10.5L9.5 7" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="nm">Продукты<small>магнит</small></div>
+            <div class="sum">−1 210 ₽</div></div>
+          <div class="op"><div class="arrow"><svg viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M6 10.5L2.5 7M6 10.5L9.5 7" stroke="#d8b4fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="nm">Транспорт<small>автобус</small></div>
+            <div class="sum">−360 ₽</div></div>
+          <div class="alllink">Вся история за месяц ›</div>
+        </div>
+
+      </div>
+
+      <div class="fab">+</div>
+      <div class="nav">
+        <div class="nb on"><div class="i">⌂</div>Траты</div>
+        <div class="nb"><div class="i">↑</div>Доходы</div>
+        <div class="nb"><div class="i">☰</div>План-факт</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ═════════ СОСТОЯНИЕ: ПЕРВЫЙ ЗАПУСК ═════════ -->
+  <div class="state">
+    <div class="lbl">Состояние 2 — первый запуск</div>
+    <div class="phone"><div class="scr">
+      <div class="status"><span>9:41</span><span>▲ ● ■</span></div>
+
+      <div class="appbar"><div class="t">Траты</div><div class="gear">≡</div></div>
+
+      <div class="month">
+        <div class="arr">‹</div>
+        <div class="mid"><b>Сентябрь 2026</b><span>30 дней до конца месяца</span></div>
+        <div class="arr">›</div>
+      </div>
+
+      <div class="content">
+
+        <div class="donutcard">
+          <div class="donutwrap">
+            <div class="donut empty"><div class="hole"><b style="color:var(--dim)">0 ₽</b>
+              <span>ТРАТ ПОКА НЕТ</span></div></div>
+          </div>
+          <div class="legend" style="grid-template-columns:1fr">
+            <div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--dim);line-height:1.6;padding:2px 0">
+              Диаграмма покажет, на что уходят деньги в этом месяце.<br>
+              Первая трата — кнопка «+» внизу справа</div>
+          </div>
+        </div>
+
+        <div class="qrow">
+          <div class="qcap">БЫСТРАЯ ТРАТА</div>
+          <div class="chips">
+            <span class="chip add">＋</span>
+          </div>
+        </div>
+
+        <div class="feed">
+          <div class="dhead"><span>СЕНТЯБРЬ 2026</span><b></b></div>
+          <div class="alllink" style="padding-top:4px">Здесь появятся траты по дням</div>
+        </div>
+
+      </div>
+
+      <div class="fab">+</div>
+      <div class="nav">
+        <div class="nb on"><div class="i">⌂</div>Траты</div>
+        <div class="nb"><div class="i">↑</div>Доходы</div>
+        <div class="nb"><div class="i">☰</div>План-факт</div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="notes">
+  <div><i class="n">1</i> <b>Диаграмма интерактивная (попробуйте — макет кликается).</b> Тап по сектору показывает в центре: процент, сумму и название категории; легенда в этот момент приглушается, повторный тап — назад к итогам месяца. В обычном состоянии в центре — сумма трат за месяц. Цвета фиксированы за категориями.</div>
+  <div><i class="n">2</i> <b>Легенда без процентов</b> — точка цвета, название, сумма. Проценты живут в тапе по диаграмме, где есть контекст. <b>Иконка траты — стрелка вниз</b> в квадратике цвета группы: расходы всегда «вниз», доходы на своей вкладке будут «вверх» — единая система обозначений.</div>
+<div><i class="n">3</i> <b>Дельта убрана.</b> С экрана и из спеки (G2 → отложено, логика пересматривается при работе над Аналитикой). Итоги «доход − расход» будут на вкладке «Доходы» и в «План-факте» — без накопительного переноса.</div>
+  <div><i class="n">4</i> <b>Быстрые траты — управляемые шаблоны.</b> Тап по чипу записывает трату сразу (снекбар «Записано: Кофе 190 ₽ — Отменить»). Чип «＋» (без текста) открывает обычную шторку добавления — сохранённые сумма и категория становятся шаблоном. Долгое нажатие — удаление шаблона (с подтверждением). Текстовые подсказки с экрана убраны — жесты объясняются однократно при первом использовании.</div>
+  <div><i class="n">5</i> <b>Навигация: Траты · Доходы · План-факт.</b> Три вкладки внизу; «+» — плавающая кнопка над панелью справа, привычный паттерн Material. Лента на «Тратах» показывает только расходы (доходы — на своей вкладке).</div>
+  <div><i class="n">6</i> <b>Первый запуск (справа).</b> Пустой пунктирный пончик по центру, короткая подпись под ним, один чип «＋», лента-заглушка. Никаких цифр, пока нет данных.</div>
+</div>
+
+<div class="spec">
+  <b>Из спеки (00-functional-spec.md, ревизия 2):</b> A4 быстрые траты, A8 лента по дням,
+  диаграмма категорий (J2-лайт на главной). Убрано: G2 дельта, блок «можно тратить»
+  (V3/V6/V8 остаются на экране С2 План-факт).<br>
+  <b>Открытые вопросы:</b> 1) в центре пончика — «10 760 ₽ потрачено» или остаток конвертов?
+  2) легенда — все категории или топ-5 + «остальное»? 3) тап по чипу быстрой траты —
+  записывать сразу или открывать предзаполненную шторку?<br>
+  Следующий экран итерации 1: С3 «Добавление» (шторка) — она же используется для «＋ добавить»
+  быстрой траты.
+</div>
+
+
+<script>
+(function(){
+  var TOTAL = 10760;
+  var SEGS = [
+    {n:'Аренда/ипотека', v:4000, c:'#ff8f4d'},
+    {n:'Продукты',       v:3120, c:'#ffb376'},
+    {n:'Кофе',           v:1200, c:'#ffe082'},
+    {n:'Здоровье',       v:1000, c:'#a7f3d0'},
+    {n:'Еда вне дома',    v:640, c:'#fcd34d'},
+    {n:'Транспорт',       v:530, c:'#d8b4fe'},
+    {n:'Прочее',          v:270, c:'#94a3b8'}
+  ];
+  var wrap = document.getElementById('dw');
+  var hole = document.getElementById('hole');
+  var donut = document.getElementById('donut');
+  var legend = document.getElementById('lg');
+  if(!wrap || !hole) return;
+  var acc = 0, selected = null;
+  var defaultHole = hole.innerHTML;
+
+  SEGS.forEach(function(seg, i){
+    var a0 = acc / TOTAL * 360; acc += seg.v;
+    var a1 = acc / TOTAL * 360;
+    var mid = (a0 + a1) / 2;
+    var hit = document.createElement('div');
+    hit.className = 'hit';
+    hit.title = seg.n;
+    hit.style.transform = 'rotate(' + mid + 'deg)';
+    hit.style.left = '50%'; hit.style.top = '50%';
+    hit.onclick = function(){ toggle(i); };
+    wrap.appendChild(hit);
+  });
+
+  function toggle(i){
+    if(selected === i){ selected = null; hole.innerHTML = defaultHole; dim(false); return; }
+    selected = i;
+    var seg = SEGS[i];
+    var pct = Math.round(seg.v / TOTAL * 100);
+    hole.innerHTML = '<div class="pct">' + pct + '%</div><b>' + seg.v.toLocaleString('ru-RU') + ' ₽</b><span>' + seg.n.toUpperCase() + '</span>';
+    dim(true);
+  }
+  function dim(on){
+    if(legend) legend.classList.toggle('dimmed', on);
+  }
+})();
+</script>
+</body>
+</html>

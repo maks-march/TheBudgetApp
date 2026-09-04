@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>С4. Доходы — BudgetApp</title>
+<style>
+:root{
+--bg:#0b0d12; --surface:#161a22; --surface2:#20242f; --line:#232836;
+--txt:#e9ecf3; --mut:#98a1b3; --dim:#666f81;
+--green:#4ade80; --green-dark:#06240f; --green-soft:#8fd6ab;
+--orange:#ffb376; --yellow:#ffe082; --red:#ff8a8a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+background:#07080c;
+min-height:100vh;
+font-family:system-ui,'Segoe UI',Roboto,sans-serif;
+color:var(--txt);
+display:flex;flex-direction:column;align-items:center;
+padding:34px 16px 60px;
+}
+header{max-width:860px;text-align:center;margin-bottom:6px}
+header h1{font-size:21px;font-weight:800}
+header h1 b{color:var(--green)}
+.meta{font-size:10.5px;color:var(--dim);font-weight:800;letter-spacing:.8px;margin-top:5px}
+.intro{max-width:860px;margin:12px auto 26px;border:1px solid var(--line);border-radius:16px;
+overflow:hidden}
+.intro .h{background:var(--surface);padding:10px 16px;font-size:11px;font-weight:800;
+letter-spacing:.6px;color:var(--mut)}
+.intro .b{padding:12px 16px;font-size:12px;color:var(--mut);line-height:1.7;background:#10131a}
+.intro .b b{color:var(--txt)}
+.row-wrap{display:flex;flex-wrap:wrap;gap:36px;justify-content:center}
+.state{display:flex;flex-direction:column;align-items:center;gap:12px}
+.state .lbl{font-size:12px;font-weight:800;color:var(--mut)}
+.phone{width:356px;height:742px;background:#000;border-radius:40px;padding:10px;flex:none;
+box-shadow:0 28px 70px rgba(0,0,0,.65),0 0 0 1px #262c3a}
+.scr{width:100%;height:100%;border-radius:31px;overflow:hidden;position:relative;
+background:linear-gradient(180deg,#12151d,#0c0f15);display:flex;flex-direction:column}
+.status{height:30px;display:flex;align-items:center;justify-content:space-between;
+padding:0 22px;font-size:11px;font-weight:600;flex:none;color:#c8cdd8}
+.appbar{display:flex;align-items:center;padding:2px 16px 8px;flex:none}
+.appbar .t{font-size:18px;font-weight:800;flex:1;letter-spacing:.2px}
+.gear{width:32px;height:32px;border-radius:11px;background:var(--surface2);
+display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:14px}
+.month{display:flex;align-items:center;padding:0 10px 12px;flex:none}
+.month .arr{width:36px;height:36px;border-radius:12px;background:var(--surface);
+border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--mut)}
+.month .mid{flex:1;text-align:center}
+.month .mid b{font-size:14px;font-weight:800;letter-spacing:.3px}
+.month .mid span{display:block;font-size:9.5px;color:var(--dim);font-weight:700;margin-top:2px}
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0 16px}
+/* ── пончик (как на главном) ── */
+.donutcard{background:var(--surface);border:1px solid var(--line);border-radius:22px;
+padding:12px 14px;margin-bottom:10px}
+.donutwrap{display:flex;justify-content:center;padding:2px 0 12px;position:relative}
+.donut{width:196px;height:196px;border-radius:50%;flex:none;position:relative;
+background:conic-gradient(#4ade80 0% 59%, #86efac 59% 98.3%, #9aa4b5 98.3% 100%)}
+.donut .hole{position:absolute;inset:38px;border-radius:50%;background:var(--surface);
+display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hole b{font-size:19px;font-weight:800;letter-spacing:.2px}
+.hole span{font-size:8.5px;color:var(--dim);font-weight:800;letter-spacing:.6px;margin-top:2px}
+.hole .pct{font-size:13px;font-weight:800;color:var(--green-soft);margin-bottom:1px}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:7px 16px}
+.lrow{display:flex;align-items:center;gap:7px;font-size:10.5px}
+.ldot{width:8px;height:8px;border-radius:3px;flex:none}
+.lrow .nm{flex:1;color:var(--mut);font-weight:600;white-space:nowrap;overflow:hidden}
+.lrow b{font-weight:750;font-variant-numeric:tabular-nums}
+.infoline{display:flex;justify-content:space-between;gap:8px;margin-top:11px;padding-top:10px;
+border-top:1px solid var(--line);font-size:10px}
+.infoline div{flex:1}
+.infoline .l{color:var(--dim);font-weight:800;letter-spacing:.5px}
+.infoline .v{font-weight:800;margin-top:2px;font-size:11.5px;font-variant-numeric:tabular-nums}
+.hit{position:absolute;width:98px;height:49px;transform-origin:98px 49px;cursor:pointer}
+.hit:hover{background:rgba(255,255,255,.05);border-radius:8px}
+.dimmed{opacity:.35}
+/* ── лента ── */
+.feed{flex:1;overflow:hidden;border-top:1px solid var(--line);padding-top:2px}
+.dhead{display:flex;justify-content:space-between;align-items:baseline;padding:9px 2px 5px}
+.dhead span{font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--dim)}
+.dhead b{font-size:11px;color:var(--mut);font-weight:700}
+.op{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid #161a24}
+.op:last-child{border:none}
+.arrow{width:22px;height:22px;border-radius:8px;display:flex;align-items:center;
+justify-content:center;flex:none}
+.arrow svg{width:11px;height:11px}
+.op .nm{font-size:13px;font-weight:600;flex:1}
+.op .nm small{display:block;font-size:10px;color:var(--dim);font-weight:500;margin-top:1px}
+.op .sum{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--green)}
+.alllink{text-align:center;font-size:11px;color:var(--dim);font-weight:700;padding:11px 0 8px}
+/* пустое состояние */
+.donut.empty{background:none;border:2px dashed #2c3345}
+/* ── навигация ── */
+.nav{height:58px;background:#0c0f15f5;border-top:1px solid var(--line);display:flex;
+align-items:center;padding:0 10px;flex:none}
+.nb{flex:1;text-align:center;font-size:10px;font-weight:700;color:var(--dim)}
+.nb .i{font-size:15px;color:var(--dim);margin-bottom:3px}
+.nb.on{color:var(--green)} .nb.on .i{color:var(--green)}
+.fab{position:absolute;right:14px;bottom:72px;width:44px;height:44px;border-radius:15px;
+background:var(--green);color:var(--green-dark);display:flex;align-items:center;
+justify-content:center;font-size:22px;font-weight:800;flex:none;
+box-shadow:0 8px 20px rgba(74,222,128,.45);border:3px solid #0c0f15}
+/* аннотации */
+.n{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+border-radius:50%;background:var(--green);color:var(--green-dark);font-size:10px;font-weight:800;
+font-style:normal;margin-left:6px;vertical-align:2px;flex:none}
+.notes{max-width:860px;margin-top:28px;display:flex;flex-direction:column;gap:6px}
+.notes div{font-size:11.5px;color:var(--mut);line-height:1.6;background:#10131a;
+border:1px solid var(--line);border-radius:12px;padding:9px 13px}
+.notes b{color:var(--txt)}
+.spec{max-width:860px;margin-top:14px;font-size:11px;color:var(--dim);line-height:1.6;
+background:#10131a99;border:1px dashed var(--line);border-radius:12px;padding:10px 14px}
+.spec b{color:var(--mut)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>С4. Доходы — <b>зеркало главного экрана</b></h1>
+  <div class="meta">ИТЕРАЦИЯ 1 · ЭКРАН 3 · РЕВИЗИЯ 1</div>
+</header>
+
+<div class="intro">
+  <div class="h">ПРИНЦИП: ТА ЖЕ ГРАММАТИКА, ЧТО И НА «ТРАТАХ»</div>
+  <div class="b">
+    Доходовый экран строится из тех же компонентов, что согласованы на главном:
+    <b>круговая диаграмма с тапом</b>, легенда без процентов, лента по дням, «+» над панелью.
+    Разница — в деталях: стрелки <b>вверх</b>, зелёный = активный доход, серый = пассивный,
+    и инфострока «активный / пассивный / средний» вместо быстрых трат.
+  </div>
+</div>
+
+<div class="row-wrap">
+
+  <!-- ═════════ СОСТОЯНИЕ 1: ДОХОДЫ ЕСТЬ ═════════ -->
+  <div class="state">
+    <div class="lbl">Состояние 1 — обычный месяц</div>
+    <div class="phone"><div class="scr">
+      <div class="status"><span>9:41</span><span>▲ ● ■</span></div>
+
+      <div class="appbar">
+        <div class="t">Доходы</div>
+        <div class="gear">≡<i class="n" style="position:absolute;margin:-26px 0 0 2px"></i></div>
+      </div>
+
+      <div class="month">
+        <div class="arr">‹</div>
+        <div class="mid"><b>Сентябрь 2026</b><span>12 дней до конца месяца</span></div>
+        <div class="arr">›</div>
+      </div>
+
+      <div class="content">
+
+        <div class="donutcard">
+          <div class="donutwrap" id="dw">
+            <div class="donut" id="donut"><div class="hole" id="hole"><b>20 350 ₽</b><span>ДОХОД ЗА МЕСЯЦ</span><i class="n" style="position:absolute;margin:70px 0 0 -14px"></i></div></div>
+          </div>
+          <div class="legend" id="lg">
+            <div class="lrow"><span class="ldot" style="background:#4ade80"></span>
+              <span class="nm">Зарплата</span><b>12 000</b></div>
+            <div class="lrow"><span class="ldot" style="background:#86efac"></span>
+              <span class="nm">Аванс</span><b>8 000</b></div>
+            <div class="lrow"><span class="ldot" style="background:#9aa4b5"></span>
+              <span class="nm">Кэшбек</span><b>350</b></div>
+          </div>
+          <div class="infoline">
+            <div><div class="l">АКТИВНЫЙ</div><div class="v" style="color:var(--green)">20 000 ₽</div></div>
+            <div><div class="l">ПАССИВНЫЙ</div><div class="v" style="color:#9aa4b5">350 ₽</div></div>
+            <div><div class="l">СРЕДНИЙ/МЕС<i class="n" style="position:absolute;margin:-16px 0 0 3px"></i></div><div class="v">19 800 ₽</div></div>
+          </div>
+        </div>
+
+        <div class="feed">
+          <div class="dhead"><span>12 СЕН</span><b>+12 000 ₽</b></div>
+          <div class="op"><div class="arrow" style="background:rgba(74,222,128,.15)"><svg viewBox="0 0 12 12" fill="none"><path d="M6 10.5v-9M6 1.5L2.5 5M6 1.5L9.5 5" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="nm">Зарплата</div>
+            <div class="sum">+12 000 ₽</div></div>
+          <div class="dhead"><span>10 СЕН</span><b>+350 ₽</b></div>
+          <div class="op"><div class="arrow" style="background:rgba(156,163,175,.18)"><svg viewBox="0 0 12 12" fill="none"><path d="M6 10.5v-9M6 1.5L2.5 5M6 1.5L9.5 5" stroke="#9aa4b5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="nm">Кэшбек<small>пассивный</small></div>
+            <div class="sum">+350 ₽</div></div>
+          <div class="dhead"><span>5 СЕН</span><b>+8 000 ₽</b></div>
+          <div class="op"><div class="arrow" style="background:rgba(74,222,128,.15)"><svg viewBox="0 0 12 12" fill="none"><path d="M6 10.5v-9M6 1.5L2.5 5M6 1.5L9.5 5" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="nm">Аванс</div>
+            <div class="sum">+8 000 ₽</div></div>
+          <div class="alllink">Вся история за месяц ›</div>
+        </div>
+
+      </div>
+
+      <div class="fab">+</div>
+      <div class="nav">
+        <div class="nb"><div class="i">⌂</div>Траты</div>
+        <div class="nb on"><div class="i">↑</div>Доходы</div>
+        <div class="nb"><div class="i">☰</div>План-факт</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ═════════ СОСТОЯНИЕ 2: ПЕРВЫЙ ЗАПУСК ═════════ -->
+  <div class="state">
+    <div class="lbl">Состояние 2 — первый запуск</div>
+    <div class="phone"><div class="scr">
+      <div class="status"><span>9:41</span><span>▲ ● ■</span></div>
+
+      <div class="appbar"><div class="t">Доходы</div><div class="gear">≡</div></div>
+
+      <div class="month">
+        <div class="arr">‹</div>
+        <div class="mid"><b>Сентябрь 2026</b><span>30 дней до конца месяца</span></div>
+        <div class="arr">›</div>
+      </div>
+
+      <div class="content">
+
+        <div class="donutcard">
+          <div class="donutwrap">
+            <div class="donut empty"><div class="hole"><b style="color:var(--dim)">0 ₽</b>
+              <span>ДОХОДОВ ПОКА НЕТ</span></div></div>
+          </div>
+          <div class="legend" style="grid-template-columns:1fr">
+            <div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--dim);line-height:1.6;padding:2px 0">
+              Запишите зарплату или аванс — средний доход<br>и диаграмма появятся сами.<br>
+              Кнопка «+» внизу справа</div>
+          </div>
+          <div class="infoline" style="opacity:.4">
+            <div><div class="l">АКТИВНЫЙ</div><div class="v">—</div></div>
+            <div><div class="l">ПАССИВНЫЙ</div><div class="v">—</div></div>
+            <div><div class="l">СРЕДНИЙ/МЕС</div><div class="v">—</div></div>
+          </div>
+        </div>
+
+        <div class="feed">
+          <div class="dhead"><span>СЕНТЯБРЬ 2026</span><b></b></div>
+          <div class="alllink" style="padding-top:4px">Здесь появятся доходы по дням</div>
+        </div>
+
+      </div>
+
+      <div class="fab">+</div>
+      <div class="nav">
+        <div class="nb"><div class="i">⌂</div>Траты</div>
+        <div class="nb on"><div class="i">↑</div>Доходы</div>
+        <div class="nb"><div class="i">☰</div>План-факт</div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var TOTAL = 20350;
+  var SEGS = [
+    {n:'Зарплата', v:12000, c:'#4ade80'},
+    {n:'Аванс',     v:8000, c:'#86efac'},
+    {n:'Кэшбек',     v:350, c:'#9aa4b5'}
+  ];
+  var wrap = document.getElementById('dw');
+  var hole = document.getElementById('hole');
+  var legend = document.getElementById('lg');
+  if(!wrap || !hole) return;
+  var acc = 0, selected = null;
+  var defaultHole = hole.innerHTML;
+
+  SEGS.forEach(function(seg, i){
+    var a0 = acc / TOTAL * 360; acc += seg.v;
+    var a1 = acc / TOTAL * 360;
+    var mid = (a0 + a1) / 2;
+    var hit = document.createElement('div');
+    hit.className = 'hit';
+    hit.title = seg.n;
+    hit.style.transform = 'rotate(' + mid + 'deg)';
+    hit.style.left = '50%'; hit.style.top = '50%';
+    hit.onclick = function(){ toggle(i); };
+    wrap.appendChild(hit);
+  });
+
+  function toggle(i){
+    if(selected === i){ selected = null; hole.innerHTML = defaultHole; dim(false); return; }
+    selected = i;
+    var seg = SEGS[i];
+    var pct = Math.round(seg.v / TOTAL * 100);
+    hole.innerHTML = '<div class="pct">' + pct + '%</div><b>' + seg.v.toLocaleString('ru-RU') + ' ₽</b><span>' + seg.n.toUpperCase() + '</span>';
+    dim(true);
+  }
+  function dim(on){ if(legend) legend.classList.toggle('dimmed', on); }
+})();
+</script>
+
+<div class="notes">
+  <div><i class="n">1</i> <b>Диаграмма — та же, что на «Тратах»</b> (макет кликается): тап по сектору показывает процент, сумму и название в центре; в центре по умолчанию — доход за месяц. Оттенки зелёного — активный доход, серые — пассивный: группа читается даже без подписи.</div>
+  <div><i class="n">2</i> <b>Инфострока вместо быстрых трат.</b> Активный / Пассивный за месяц (G3) и средний доход в месяц (G4) — считается по месяцам, где был доход. Быстрые шаблоны здесь не нужны: доходов в месяц 1–3, и они не «повторяются в метро».</div>
+  <div><i class="n">3</i> <b>Лента по дням со стрелками вверх</b> — зелёные активные, серые пассивные (подпись «пассивный» у серых для ясности). Тап по операции — та же шторка редактирования (С3, состояние «Доход»).</div>
+  <div><i class="n">4</i> <b>«+» открывает шторку сразу в состоянии «Доход»</b> — сегмент уже переключён, категории дохода с зелёными/серыми стрелками, календарь дат, «＋» своя категория. Всё как в согласованном С3.</div>
+  <div><i class="n">5</i> <b>Первый запуск (справа):</b> пунктирный пончик «0 ₽», заглушка инфостроки, подсказка про «+». Никаких цифр нет до первого дохода.</div>
+</div>
+
+<div class="spec">
+  <b>Из спеки (00-functional-spec.md):</b> A2 добавление дохода (шторкой С3), G3 разбивка
+  активный/пассивный, G4 средний доход в месяц, A8 лента по дням.<br>
+  <b>Критерий приёмки:</b> переход с «Трат» — один тап; добавление дохода — 3 тапа;
+  диаграмма и инфострока пересчитываются сразу.<br>
+  Осталось в итерации 1: <b>С2 «План-факт»</b> — конверты с переносом остатков,
+  «можно тратить в день», предупреждения о перерасходе (V1–V8).
+</div>
+
+</body>
+</html>

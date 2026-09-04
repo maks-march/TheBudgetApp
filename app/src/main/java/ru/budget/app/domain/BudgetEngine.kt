@@ -1,6 +1,6 @@
 package ru.budget.app.domain
 
-import ru.budget.app.data.Categories
+import ru.budget.app.data.CategoryEntity
 import ru.budget.app.data.TxEntity
 import java.util.Locale
 
@@ -23,12 +23,13 @@ data class MonthTotals(val income: Double, val expense: Double) {
 }
 
 /**
- * Чистое расчётное ядро без зависимостей от Android — легко покрывается юнит-тестами.
- * Вычисляется из списков транзакций и планов (факт — единственный источник истины).
+ * Чистое расчётное ядро без Android-зависимостей.
+ * Факт (операции) — единственный источник истины; категории передаются снаружи.
  */
 class BudgetEngine(
     private val txs: List<TxEntity>,
-    private val plans: Map<String, Map<String, Double>>
+    private val plans: Map<String, Map<String, Double>>,
+    private val expenseCats: List<CategoryEntity>
 ) {
 
     private val byMonth: Map<String, List<TxEntity>> = txs.groupBy { it.date.take(7) }
@@ -39,14 +40,20 @@ class BudgetEngine(
             .groupBy({ it.categoryId }, { it.amount })
             .mapValues { (_, list) -> list.sum() }
 
-    /** Конверты месяцев января..upToMonth с переносом остатков между месяцами. */
+    fun incomeIn(month: String): Map<String, Double> =
+        byMonth[month].orEmpty().asSequence()
+            .filter { it.type == TYPE_IN }
+            .groupBy({ it.categoryId }, { it.amount })
+            .mapValues { (_, list) -> list.sum() }
+
+    /** Конверты месяцев января..upToMonth с переносом остатков. */
     fun envelopes(year: Int, upToMonth: Int = 11): Map<Int, Map<String, Envelope>> {
         val result = mutableMapOf<Int, Map<String, Envelope>>()
         var prev: Map<String, Envelope> = emptyMap()
         for (m in 0..upToMonth.coerceIn(0, 11)) {
             val key = monthKey(year, m)
             val spent = spentIn(key)
-            val current = Categories.expenses.associate { cat ->
+            val current = expenseCats.associate { cat ->
                 cat.id to Envelope(
                     plan = plans[key]?.get(cat.id) ?: 0.0,
                     carryIn = prev[cat.id]?.left ?: 0.0,
@@ -77,20 +84,21 @@ class BudgetEngine(
         return MonthTotals(income, expense)
     }
 
-    /** Накопительная дельта (доход − расход) по месяцам года, с переносом остатка. */
-    fun deltaChain(year: Int, upToMonth: Int = 11): Map<Int, Double> {
-        val result = mutableMapOf<Int, Double>()
-        var acc = 0.0
-        for (m in 0..upToMonth.coerceIn(0, 11)) {
-            acc += totals(monthKey(year, m)).net
-            result[m] = acc
-        }
-        return result
-    }
-
-    fun txsOfMonth(month: String): List<TxEntity> =
+    fun txsOfMonth(month: String, type: String? = null): List<TxEntity> =
         byMonth[month].orEmpty()
+            .filter { type == null || it.type == type }
             .sortedWith(compareByDescending<TxEntity> { it.date }.thenByDescending { it.id })
+
+    /** Средний доход в месяц по месяцам года (до выбранного включительно), где был доход. */
+    fun avgIncome(year: Int, upToMonth: Int): Double {
+        var sum = 0.0
+        var months = 0
+        for (m in 0..upToMonth.coerceIn(0, 11)) {
+            val inc = totals(monthKey(year, m)).income
+            if (inc > 0.0) { sum += inc; months++ }
+        }
+        return if (months > 0) sum / months else 0.0
+    }
 
     companion object {
         const val TYPE_EXP = "exp"

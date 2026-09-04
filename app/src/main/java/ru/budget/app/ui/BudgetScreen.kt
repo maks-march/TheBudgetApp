@@ -28,14 +28,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ru.budget.app.data.Categories
-import ru.budget.app.data.Category
+import ru.budget.app.data.CategoryEntity
 import ru.budget.app.data.FlowGroup
 import ru.budget.app.domain.Envelope
 
 /**
- * Экран план-факта: конвертный бюджет с переносом остатков.
- * Тап по категории — изменить план месяца.
+ * «План-факт» — конверты с переносом остатков (текущая реализация до макета С2).
+ * available = план + перенос с прошлого месяца; left = available − потрачено.
  */
 @Composable
 fun BudgetScreen(
@@ -47,23 +46,21 @@ fun BudgetScreen(
     val engine = state.engine
     val envs = engine.envelopesOfMonth(year, month)
     val total = engine.totalEnvelope(year, month)
-    var planCat by remember { mutableStateOf<Category?>(null) }
+    var planCat by remember { mutableStateOf<CategoryEntity?>(null) }
 
     LazyColumn(
-        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 20.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item { SummaryCard(total) }
-        item { GroupCard(FlowGroup.FIXED, envs) { planCat = it } }
-        item { GroupCard(FlowGroup.VARIABLE, envs) { planCat = it } }
+        item { GroupCard(FlowGroup.FIXED, state, envs) { planCat = it } }
+        item { GroupCard(FlowGroup.VARIABLE, state, envs) { planCat = it } }
         item {
             Text(
                 "Остаток каждого конверта автоматически переносится на следующий месяц. " +
                     "Перерасход уменьшает доступное в следующем месяце. " +
                     "Нажмите на категорию, чтобы изменить план.",
-                fontSize = 11.5.sp,
-                color = TextDim,
-                lineHeight = 16.sp,
+                fontSize = 11.5.sp, color = TextDim, lineHeight = 16.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
             )
@@ -91,28 +88,17 @@ private fun SummaryCard(total: Envelope) {
             Text("ИТОГО ЗА МЕСЯЦ", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = TextMut)
             Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.Bottom) {
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        "${Fmt.money(total.spent)}",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        "потрачено из ${Fmt.money(total.available)} доступных",
-                        fontSize = 11.sp,
-                        color = TextDim
-                    )
+                    Text(Fmt.money(total.spent), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("потрачено из ${Fmt.money(total.available)} доступных", fontSize = 11.sp, color = TextDim)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        Fmt.signed(total.left),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        Fmt.signed(total.left), fontSize = 18.sp, fontWeight = FontWeight.Bold,
                         color = if (total.left >= 0) Green else Red
                     )
                     Text(
                         if (total.left >= 0) "переходит в следующий месяц" else "перерасход",
-                        fontSize = 10.sp,
-                        color = TextDim
+                        fontSize = 10.sp, color = TextDim
                     )
                 }
             }
@@ -121,8 +107,14 @@ private fun SummaryCard(total: Envelope) {
 }
 
 @Composable
-private fun GroupCard(group: FlowGroup, envs: Map<String, Envelope>, onClick: (Category) -> Unit) {
-    val cats = Categories.expenses.filter { it.group == group }
+private fun GroupCard(
+    group: FlowGroup,
+    state: AppState,
+    envs: Map<String, Envelope>,
+    onClick: (CategoryEntity) -> Unit
+) {
+    val cats = state.cats.filter { !it.hidden && it.group == group.name }
+        .sortedBy { it.sortOrder }
     val sum = cats.sumOf { envs[it.id]?.available ?: 0.0 }
     Column {
         Row(
@@ -130,18 +122,15 @@ private fun GroupCard(group: FlowGroup, envs: Map<String, Envelope>, onClick: (C
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                group.title.uppercase(),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextMut,
-                modifier = Modifier.weight(1f)
+                group.title.uppercase(), Modifier.weight(1f),
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMut
             )
             Text(Fmt.money(sum), fontSize = 12.sp, color = TextDim)
         }
         Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = SurfaceContainer)) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
                 cats.forEach { cat ->
-                    EnvelopeRow(cat, envs[cat.id] ?: Envelope(0.0, 0.0, 0.0)) { onClick(cat) }
+                    EnvelopeRow(cat, envs[cat.id] ?: Envelope(0.0, 0.0, 0.0), group) { onClick(cat) }
                 }
             }
         }
@@ -149,19 +138,22 @@ private fun GroupCard(group: FlowGroup, envs: Map<String, Envelope>, onClick: (C
 }
 
 @Composable
-private fun EnvelopeRow(cat: Category, env: Envelope, onClick: () -> Unit) {
+private fun EnvelopeRow(
+    cat: CategoryEntity,
+    env: Envelope,
+    group: FlowGroup,
+    onClick: () -> Unit
+) {
     val frac = if (env.available > 0.0) {
         (env.spent / env.available).toFloat().coerceIn(0f, 1f)
     } else if (env.spent > 0.0) 1f else 0f
     val over = env.left < 0.0
 
-    Column(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 9.dp)
-    ) {
+    Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 9.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            GroupDot(cat.group)
+            GroupDot(groupColor(group))
             Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(cat.name, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(cat.name + if (cat.isCustom) "" else "", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 val sub = buildString {
                     append("план ${Fmt.plain(env.plan)}")
                     if (env.carryIn != 0.0) append(" · перенос ${Fmt.signed(env.carryIn)}")
@@ -171,9 +163,7 @@ private fun EnvelopeRow(cat: Category, env: Envelope, onClick: () -> Unit) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    Fmt.signed(env.left),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
+                    Fmt.signed(env.left), fontSize = 13.sp, fontWeight = FontWeight.Bold,
                     color = when {
                         over -> Red
                         env.left > 0.0 -> Green
@@ -182,15 +172,14 @@ private fun EnvelopeRow(cat: Category, env: Envelope, onClick: () -> Unit) {
                 )
                 Text(
                     if (over) "перерасход" else "доступно ${Fmt.plain(env.available)}",
-                    fontSize = 9.sp,
-                    color = TextDim
+                    fontSize = 9.sp, color = TextDim
                 )
             }
         }
         LinearProgressIndicator(
             progress = { frac },
             modifier = Modifier.fillMaxWidth().padding(top = 7.dp),
-            color = if (over) Red else groupColor(cat.group),
+            color = if (over) Red else groupColor(group),
             trackColor = SurfaceHigh
         )
     }
@@ -198,7 +187,7 @@ private fun EnvelopeRow(cat: Category, env: Envelope, onClick: () -> Unit) {
 
 @Composable
 private fun PlanDialog(
-    cat: Category,
+    cat: CategoryEntity,
     month: Int,
     env: Envelope,
     onDismiss: () -> Unit,
@@ -215,8 +204,7 @@ private fun PlanDialog(
                 Text(
                     "Потрачено ${Fmt.money(env.spent)} · перенос ${Fmt.signed(env.carryIn)} · " +
                         "доступно ${Fmt.money(env.available)}",
-                    fontSize = 12.sp,
-                    color = TextMut
+                    fontSize = 12.sp, color = TextMut
                 )
                 OutlinedTextField(
                     value = text,

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>С7. Настройки — ревизия 3</title>
+<style>
+:root{
+--bg:#0b0d12; --surface:#161a22; --surface2:#20242f; --line:#232836;
+--txt:#e9ecf3; --mut:#98a1b3; --dim:#666f81;
+--green:#4ade80; --green-dark:#06240f; --green-soft:#8fd6ab;
+--orange:#ffb376; --yellow:#ffe082; --red:#ff8a8a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+background:#07080c;min-height:100vh;
+font-family:system-ui,'Segoe UI',Roboto,sans-serif;color:var(--txt);
+display:flex;flex-direction:column;align-items:center;padding:34px 16px 60px;
+}
+header{max-width:860px;text-align:center;margin-bottom:6px}
+header h1{font-size:21px;font-weight:800}
+header h1 b{color:var(--green)}
+.meta{font-size:10.5px;color:var(--dim);font-weight:800;letter-spacing:.8px;margin-top:5px}
+.intro{max-width:860px;margin:12px auto 26px;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.intro .h{background:var(--surface);padding:10px 16px;font-size:11px;font-weight:800;
+letter-spacing:.6px;color:var(--mut)}
+.intro .b{padding:12px 16px;font-size:12px;color:var(--mut);line-height:1.7;background:#10131a}
+.intro .b b{color:var(--txt)}
+.row-wrap{display:flex;flex-wrap:wrap;gap:36px;justify-content:center}
+.state{display:flex;flex-direction:column;align-items:center;gap:12px}
+.state .lbl{font-size:12px;font-weight:800;color:var(--mut)}
+.phone{width:356px;height:742px;background:#000;border-radius:40px;padding:10px;flex:none;
+box-shadow:0 28px 70px rgba(0,0,0,.65),0 0 0 1px #262c3a}
+.scr{width:100%;height:100%;border-radius:31px;overflow:hidden;position:relative;
+background:linear-gradient(180deg,#12151d,#0c0f15);display:flex;flex-direction:column}
+.status{height:30px;display:flex;align-items:center;justify-content:space-between;
+padding:0 22px;font-size:11px;font-weight:600;flex:none;color:#c8cdd8}
+.appbar{display:flex;align-items:center;gap:10px;padding:2px 16px 10px;flex:none}
+.back{width:32px;height:32px;border-radius:11px;background:var(--surface2);
+display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:15px}
+.appbar .t{font-size:18px;font-weight:800;flex:1;letter-spacing:.2px}
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0 16px;gap:10px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:4px 14px}
+.gcap{font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--dim);
+padding:11px 2px 5px}
+.row2{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid #1b2029}
+.group .row2:last-child{border-bottom:none}
+.rico{width:30px;height:30px;border-radius:10px;background:var(--surface2);display:flex;
+align-items:center;justify-content:center;flex:none;color:var(--mut);font-size:13px;font-weight:800}
+.row2 .nm{flex:1;font-size:13px;font-weight:600}
+.row2 .nm small{display:block;font-size:10px;color:var(--dim);font-weight:500;margin-top:1px}
+.chev{color:var(--dim);font-size:13px}
+.vtxt{font-size:11px;color:var(--dim);font-weight:700}
+.danger .rico{background:rgba(255,138,138,.12);color:var(--red)}
+.danger .nm{color:var(--red)}
+/* подэкран категорий */
+.seg{display:flex;background:var(--surface2);border-radius:13px;padding:4px;gap:4px}
+.seg div{flex:1;text-align:center;padding:8px 0;border-radius:10px;font-size:12px;
+font-weight:700;color:var(--mut)}
+.seg div.on{background:#2a3040;color:var(--txt)}
+.catlist{flex:1;overflow:hidden}
+.gcap2{display:flex;justify-content:space-between;align-items:baseline;font-size:9.5px;
+font-weight:800;letter-spacing:.8px;color:var(--dim);padding:10px 2px 5px}
+.dot{width:8px;height:8px;border-radius:3px;flex:none}
+.eye{width:34px;height:22px;border-radius:99px;background:#333a49;position:relative;flex:none}
+.eye .k{position:absolute;top:2.5px;left:3px;width:17px;height:17px;border-radius:50%;
+background:#8b94a7;display:flex;align-items:center;justify-content:center;
+font-size:8px;color:#0b0d12;font-weight:900}
+.eye.on{background:rgba(74,222,128,.35)}
+.eye.on .k{left:14px;background:var(--green)}
+.hiddenrow{opacity:.45}
+.addbtn{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:2px;
+padding:12px 0;border:1px dashed #2c3345;border-radius:14px;color:var(--dim);
+font-size:12.5px;font-weight:700}
+/* обновление-диалог */
+.updbanner{background:linear-gradient(140deg,#173626,#0f2018);border:1px solid #1f4a33;
+border-radius:18px;padding:13px 14px}
+.updbanner .t{font-size:13.5px;font-weight:800;color:var(--green-soft)}
+.updbanner p{font-size:11px;color:var(--mut);line-height:1.55;margin:4px 0 9px}
+.updbtns{display:flex;gap:8px}
+.ub{flex:1;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+font-size:12px;font-weight:750}
+.ub.sec{background:var(--surface2);color:var(--mut)}
+.ub.pri{background:var(--green);color:var(--green-dark)}
+/* навигация */
+.nav{height:58px;background:#0c0f15f5;border-top:1px solid var(--line);display:flex;
+align-items:center;padding:0 10px;flex:none}
+.nb{flex:1;text-align:center;font-size:10px;font-weight:700;color:var(--dim)}
+.nb .i{font-size:15px;color:var(--dim);margin-bottom:3px}
+.nb.on{color:var(--green)} .nb.on .i{color:var(--green)}
+.n{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+border-radius:50%;background:var(--green);color:var(--green-dark);font-size:10px;font-weight:800;
+font-style:normal;margin-left:6px;vertical-align:2px;flex:none}
+.notes{max-width:860px;margin-top:28px;display:flex;flex-direction:column;gap:6px}
+.notes div{font-size:11.5px;color:var(--mut);line-height:1.6;background:#10131a;
+border:1px solid var(--line);border-radius:12px;padding:9px 13px}
+.notes b{color:var(--txt)}
+.spec{max-width:860px;margin-top:14px;font-size:11px;color:var(--dim);line-height:1.6;
+background:#10131a99;border:1px dashed var(--line);border-radius:12px;padding:10px 14px}
+.spec b{color:var(--mut)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>С7. Настройки — <b>что за иконкой [≡]</b></h1>
+  <div class="meta">ДОСРОЧНО ИЗ ИТЕРАЦИИ 2 · РЕВИЗИЯ 3</div>
+</header>
+
+<div class="intro">
+  <div class="h">ПРИНЦИП: ТОЛЬКО НЕ ФИНАНСОВОЕ</div>
+  <div class="b">
+    В настройках нет ни одной цифры бюджета — только обслуживание приложения:
+    <b>данные, обновления, о программе</b>. Управление категориями живёт там, где ими
+    пользуются, — в шторке добавления (С3): «＋» добавить, зажатие — удалить/скрыть.
+  </div>
+</div>
+
+<div class="row-wrap">
+
+  <!-- ═════════ 1. ГЛАВНЫЙ СПИСОК ═════════ -->
+  <div class="state">
+    <div class="lbl">1 — главный список</div>
+    <div class="phone"><div class="scr">
+      <div class="status"><span>9:41</span><span>▲ ● ■</span></div>
+
+      <div class="appbar">
+        <div class="back">‹</div>
+        <div class="t">Настройки</div>
+      </div>
+
+      <div class="content">
+
+        <div class="gcap">ДАННЫЕ</div>
+        <div class="group">
+          <div class="row2"><div class="rico">↓</div>
+            <div class="nm">Экспорт в Excel<small>все операции в .xlsx, папка «Загрузки»</small><i class="n">1</i></div>
+            <div class="chev">›</div></div>
+          <div class="row2"><div class="rico">⇄</div>
+            <div class="nm">Резервная копия<small>сохранить файл / восстановить</small></div>
+            <div class="chev">›</div></div>
+          <div class="row2 danger"><div class="rico">×</div>
+            <div class="nm">Очистить все данные<small>операции, планы, шаблоны</small></div>
+            <div class="chev">›</div></div>
+        </div>
+
+        <div class="gcap">ПРИЛОЖЕНИЕ</div>
+        <div class="group">
+          <div class="updbanner" style="margin:8px 0 4px">
+            <div class="t">Доступна версия 0.2</div>
+            <p>Диаграмма по неделям, экспорт сводки конвертов, исправления</p>
+            <div class="updbtns"><div class="ub sec">Позже</div><div class="ub pri">Обновить</div></div>
+          </div>
+          <div class="row2"><div class="rico">↻</div>
+            <div class="nm">Проверить обновления<small>загрузка с GitHub</small><i class="n">2</i></div>
+            <div class="chev">›</div></div>
+          <div class="row2"><div class="rico">ⓘ</div>
+            <div class="nm">О приложении</div>
+            <div class="vtxt">0.1.0</div></div>
+        </div>
+
+      </div>
+
+      <div class="nav">
+        <div class="nb on"><div class="i">⌂</div>Траты</div>
+        <div class="nb"><div class="i">↑</div>Доходы</div>
+        <div class="nb"><div class="i">☰</div>План-факт</div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="notes">
+  <div><i class="n">1</i> <b>Данные.</b> Экспорт в Excel — тот же BudgetExporter, что уже реализован (Z1); резервная копия — JSON-файл сохранить/восстановить (Z3); «Очистить все данные» — красная, с двойным подтверждением.</div>
+  <div><i class="n">2</i> <b>Обновления — прямо тут, без отдельного экрана.</b> Если новая версия есть — зелёный баннер с кнопкой «Обновить» (механика UpdateChecker + ApkDownloader уже в проекте, I1). Баннер появляется и при тихой проверке на старте. «О приложении» — версия, исходный код, связь (I2).</div>
+  <div><i class="n">3</i> <b>Вход и выход.</b> Экран открывается по [≡] из шапки «Трат» и «Доходов», возврат — стрелка «‹» или системный жест назад. Нижняя навигация остаётся.</div>
+  <div><b>Категории убраны из настроек.</b> Единственное место управления — шторка добавления (С3): «＋» рядом с категориями создаёт свою (название + группа), зажатие чипа удаляет свою / скрывает системную. Скрытые исчезают из шторки, конвертов и диаграмм, но история операций не ломается.</div>
+</div>
+
+<div class="spec">
+  <b>Из спеки (00-functional-spec.md, рев. 3):</b> Z1 экспорт, Z3 бэкап, I1 обновления,
+  I2 о приложении. Блок «Скоро» убран — будущие функции (PIN, виджет, накопления, P2)
+  появятся в настройках, когда будут реализованы. Категории — только из шторки С3 (B2).<br>
+  <b>Критерий приёмки:</b> из настроек доступны все операции обслуживания без похода в файлы.<br>
+  <b>Статус итераций:</b> С1, С3 согласованы; С4, С7 (досрочно) на согласовании;
+  остался С2 «План-факт» — ядро конвертов.
+</div>
+
+</body>
+</html>
