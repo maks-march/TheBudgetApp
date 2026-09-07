@@ -38,7 +38,6 @@ import ru.budget.app.data.FlowGroup
 import ru.budget.app.data.QuickEntity
 import ru.budget.app.data.TxEntity
 import ru.budget.app.domain.BudgetEngine
-import ru.budget.app.domain.BudgetEngine.TYPE_EXP
 import java.time.LocalDate
 
 /**
@@ -77,7 +76,7 @@ fun ExpensesScreen(
     var confirmQuick by remember { mutableStateOf<QuickEntity?>(null) }
 
     // лента по дням
-    val feed = remember(state, key) { buildFeed(engine.txsOfMonth(key, TYPE_EXP)) }
+    val feed = remember(state, key) { buildFeed(engine.txsOfMonth(key, BudgetEngine.TYPE_EXP)) }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 18.dp),

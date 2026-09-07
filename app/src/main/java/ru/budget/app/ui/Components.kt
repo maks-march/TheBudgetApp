@@ -79,7 +79,7 @@ fun DonutChart(
                     val dx = pos.x - c.x
                     val dy = pos.y - c.y
                     val r = sqrt(dx * dx + dy * dy)
-                    val outer = size.minDimension / 2f
+                    val outer = size.width.coerceAtMost(size.height) / 2f
                     val inner = outer * 0.62f
                     if (r < inner || r > outer) { onSelect(null); return@detectTapGestures }
                     var ang = Math.toDegrees(atan2(dy, dx).toDouble()) + 90.0
@@ -95,10 +95,10 @@ fun DonutChart(
             }
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            val outer = size.minDimension / 2f
+            val outer = size.width.coerceAtMost(size.height) / 2f
             val inner = outer * 0.62f
             val thickness = outer - inner
-            val topLeft = Offset(center.x - outer + thickness / 2, center.y - outer + thickness / 2)
+            val topLeft = Offset(size.width / 2f - outer + thickness / 2f, size.height / 2f - outer + thickness / 2f)
             val arcSize = Size(outer * 2 - thickness, outer * 2 - thickness)
             if (empty || total <= 0.0) {
                 drawCircle(
@@ -109,7 +109,7 @@ fun DonutChart(
             } else {
                 var start = -90f
                 segments.forEachIndexed { i, seg ->
-                    val sweep = (seg.value / total * 360f).coerceAtLeast(0.5f)
+                    val sweep = (seg.value / total * 360f).toFloat().coerceAtLeast(0.5f)
                     drawArc(
                         color = if (selectedIdx == null || selectedIdx == i) seg.color else seg.color.copy(alpha = 0.35f),
                         startAngle = start,

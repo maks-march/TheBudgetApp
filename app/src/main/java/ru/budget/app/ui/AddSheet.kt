@@ -150,13 +150,13 @@ fun AddSheet(
                     textAlign = TextAlign.Center
                 )
 
-                Numpad { k ->
+                Numpad({ k ->
                     when (k) {
                         "⌫" -> amountText = amountText.dropLast(1)
                         "," -> if (!amountText.contains(',') && !amountText.contains('.')) amountText += ","
                         else -> if (amountText.length < 9) amountText += k
                     }
-                }
+                })
 
                 if (type == BudgetEngine.TYPE_IN) {
                     CategorySection(
@@ -209,7 +209,10 @@ fun AddSheet(
                     Text(
                         when (dateISO) {
                             today.toString() -> "Сегодня"
-                            else -> dayLabel(dateISO) + if (dateISO.year != today.year) " ${dateISO.year}" else ""
+                            else -> {
+                                val d = LocalDate.parse(dateISO)
+                                dayLabel(dateISO) + if (d.year != today.year) " ${d.year}" else ""
+                            }
                         },
                         fontSize = 13.sp
                     )
@@ -356,9 +359,7 @@ private fun CatChip(
         },
         colors = FilterChipDefaults.filterChipColors(
             containerColor = Color.Transparent,
-            borderColor = Outline,
             selectedContainerColor = Green.copy(alpha = 0.16f),
-            selectedBorderColor = Green.copy(alpha = 0.5f),
             selectedLabelColor = TextMain
         ),
         modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)

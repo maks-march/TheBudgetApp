@@ -32,7 +32,7 @@ data class AppState(
     val engine: BudgetEngine
 ) {
     fun cat(id: String): CategoryEntity? = cats.find { it.id == id }
-    fun group(catId: String): FlowGroup? = cat(id)?.let { runCatching { FlowGroup.valueOf(it.group) }.getOrNull() }
+    fun group(catId: String): FlowGroup? = cat(catId)?.let { runCatching { FlowGroup.valueOf(it.group) }.getOrNull() }
 
     /** Число использований категорий (для порядка «частые сверху» в шторке). */
     fun usageCounts(): Map<String, Int> = txs.groupingBy { it.categoryId }.eachCount()

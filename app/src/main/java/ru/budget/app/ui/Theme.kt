@@ -48,6 +48,7 @@ val IncomeGrays = listOf(
 private val Scheme = darkColorScheme(
     primary = Green,
     onPrimary = GreenOn,
+    outline = Outline,
     secondary = Purple,
     background = Bg,
     onBackground = TextMain,
@@ -58,7 +59,6 @@ private val Scheme = darkColorScheme(
     surfaceContainer = SurfaceContainer,
     surfaceContainerHigh = SurfaceHigh,
     surfaceContainerHighest = SurfaceHigh,
-    outline = Outline,
     outlineVariant = Outline,
     error = Red
 )

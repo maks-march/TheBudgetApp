@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import ru.budget.app.data.FlowGroup
 import ru.budget.app.data.TxEntity
 import ru.budget.app.domain.BudgetEngine
-import ru.budget.app.domain.BudgetEngine.TYPE_IN
 
 /**
  * Экран «Доходы» — макет С4: зеркало главного (пончик с тапом, легенда, лента
@@ -63,7 +62,7 @@ fun IncomeScreen(
     val totalIncome = segments.sumOf { it.value }
     var selected by remember(key) { mutableStateOf<Int?>(null) }
 
-    val feed = remember(state, key) { buildFeed(engine.txsOfMonth(key, TYPE_IN)) }
+    val feed = remember(state, key) { buildFeed(engine.txsOfMonth(key, BudgetEngine.TYPE_IN)) }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 18.dp),
@@ -130,9 +129,9 @@ fun IncomeScreen(
                     Column(Modifier.padding(top = 10.dp)) {
                         Row(Modifier.fillMaxWidth().background(Outline.copy(alpha = 0.5f)).height(1.dp)) {}
                         Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                            InfoCell("АКТИВНЫЙ", if (active > 0.0) Fmt.money(active) else "—", Green, totals.income > 0.0)
-                            InfoCell("ПАССИВНЫЙ", if (passive > 0.0) Fmt.money(passive) else "—", GreyBlue, totals.income > 0.0)
-                            InfoCell("СРЕДНИЙ/МЕС", if (avg > 0.0) Fmt.money(avg) else "—", TextMain, totals.income > 0.0)
+                            InfoCell("АКТИВНЫЙ", if (active > 0.0) Fmt.money(active) else "—", Green, totals.income > 0.0, Modifier.weight(1f))
+                            InfoCell("ПАССИВНЫЙ", if (passive > 0.0) Fmt.money(passive) else "—", GreyBlue, totals.income > 0.0, Modifier.weight(1f))
+                            InfoCell("СРЕДНИЙ/МЕС", if (avg > 0.0) Fmt.money(avg) else "—", TextMain, totals.income > 0.0, Modifier.weight(1f))
                         }
                     }
                 }
@@ -182,8 +181,8 @@ fun IncomeScreen(
 }
 
 @Composable
-private fun InfoCell(label: String, value: String, color: androidx.compose.ui.graphics.Color, visible: Boolean) {
-    Column(Modifier.weight(1f)) {
+private fun InfoCell(label: String, value: String, color: androidx.compose.ui.graphics.Color, visible: Boolean, modifier: Modifier = Modifier) {
+    Column(modifier) {
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextDim)
         Text(
             value, fontSize = 11.5.sp, fontWeight = FontWeight.Bold,
